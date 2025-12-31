@@ -36,4 +36,4 @@ jobs:
 
       - name: "Deploy the code to my server"
         run: |
-          ssh -t ubuntu@$SERVER_IP -i Riwaj-Key.pem 'cd /var/www/html && git pull origin master'
+          ssh -t ubuntu@$SERVER_IP -i Riwaj-Key.pem 'cd /var/www/html && sudo git pull origin master'
