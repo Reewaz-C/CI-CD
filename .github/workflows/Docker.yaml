@@ -1,0 +1,38 @@
+# name: "NodeJS-docker CI"
+# on:
+#   push:
+#     master
+  
+# jobs:
+#   build:
+#     name: "Deploy code"
+#     runs_on: ubuntu_latest
+
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           fetch_depth: 0
+
+#       - name: "Configure SSH"
+#         run: |
+#           mkdir -p ~/.ssh
+#           chmod 700 ~/.ssh
+#           echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+#           cat ~/.ssh/config
+#           touch ~/.ssh/known_hosts
+#           chmod 600 ~/.ssh/known_hosts
+
+#       - name: "SSH Key Access"
+#         run: |
+#           touch Riwaj-Key.pem
+#           echo $SSH_KEY64 | base64 -d> Riwaj-key.pem && chmod 400 Riwaj-Key.pem
+#           ssh-keygen -R $SERVER_IP
+        
+#         env:
+#           SSH_KEY64: ${{ secrets.SSH_KEY64 }}
+
+#       - name: "Creating Docker Image"
+#         run: |
+#           ssh -t ubuntu@SERVER_IP -i Riwaj-Key.pem
+#           docker build -t mynodeapp:V1.0.0 .
+#           docker run -d -p 3000:80 mynodeapp
