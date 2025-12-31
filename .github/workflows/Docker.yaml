@@ -1,7 +1,7 @@
 name: "NodeJS-docker CI"
 on:
   push:
-    Docker-Pipeline
+    branches: [ "Docker-Pipeline" ]
   
 jobs:
   build:
