@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     name: "Deploy code"
-    runs_on: ubuntu_latest
+    runs-on: ubuntu_latest
     env:
       SERVER_IP: ${{ vars.SERVER_IP }}
 
