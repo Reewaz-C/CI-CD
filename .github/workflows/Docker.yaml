@@ -6,14 +6,14 @@ on:
 jobs:
   build:
     name: "Deploy code"
-    runs-on: ubuntu_latest
+    runs-on: ubuntu-latest
     env:
       SERVER_IP: ${{ vars.SERVER_IP }}
 
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch_depth: 0
+          fetch-depth: 0
 
       - name: "Configure SSH"
         run: |
@@ -27,7 +27,7 @@ jobs:
       - name: "SSH Key Access"
         run: |
           touch Riwaj-Key.pem
-          echo $SSH_KEY64 | base64 -d> Riwaj-key.pem && chmod 400 Riwaj-Key.pem
+          echo $SSH_KEY64 | base64 -d> Riwaj-Key.pem && chmod 400 Riwaj-Key.pem
           ssh-keygen -R $SERVER_IP
         
         env:
@@ -35,6 +35,7 @@ jobs:
 
       - name: "Creating Docker Image"
         run: |
-          ssh -t ubuntu@$SERVER_IP -i Riwaj-Key.pem
-          docker build -t mynodeapp:V1.0.0 .
-          docker run -d -p 3000:80 mynodeapp
+          ssh -i Riwaj-Key.pem ubuntu@$SERVER_IP << 'EOF'
+            docker build -t mynodeapp:V1.0.0 .
+            docker run -d --name mynodeapp -p 3000:80 mynodeapp:V1.0.0
+          EOF
