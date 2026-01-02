@@ -1,56 +1,42 @@
 name: "NodeJS-docker CI"
+
 on:
   push:
     branches: [ "Docker-Pipeline" ]
-  
+
 jobs:
-  build:
-    name: "Deploy code"
+  deploy:
     runs-on: ubuntu-latest
+
     env:
       SERVER_IP: ${{ vars.SERVER_IP }}
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: "Configure SSH"
+      - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
-          cat ~/.ssh/config
-          touch ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+          echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
 
-      - name: "SSH Key Access"
+      - name: SSH Key Access
         run: |
-          touch Riwaj-Key.pem
-          echo $SSH_KEY64 | base64 -d> Riwaj-Key.pem && chmod 400 Riwaj-Key.pem
-          ssh-keygen -R $SERVER_IP
-        
-        env:
-          SSH_KEY64: ${{ secrets.SSH_KEY64 }}
+          echo "${{ secrets.SSH_KEY64 }}" | base64 -d > Riwaj-Key.pem
+          chmod 400 Riwaj-Key.pem
+          ssh-keygen -R $SERVER_IP || true
 
-      - name: "Creating Docker Image"
+      - name: Copy code to EC2
+        run: |
+          rsync -avz -e "ssh -i Riwaj-Key.pem" ./ ubuntu@$SERVER_IP:/home/ubuntu/nodeapp
+
+      - name: Build & Deploy on EC2
         run: |
           ssh -i Riwaj-Key.pem ubuntu@$SERVER_IP << 'EOF'
-            sudo apt update
-            sudo apt install ca-certificates curl gnupg lsb-release -y
-
-            sudo install -m 0755 -d /etc/apt/keyrings
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-            sudo chmod a+r /etc/apt/keyrings/docker.gpg
-
-            echo \
-              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-              $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-            sudo apt update
-            sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
-            sudo systemctl start docker
-
-            sudo docker build -t mynodeapp:V1.0.0 .
-            sudo docker run -d --name mynodeapp -p 3000:80 mynodeapp:V1.0.0
+            cd /home/ubuntu/nodeapp
+            sudo docker stop mynodeapp || true
+            sudo docker rm mynodeapp || true
+            sudo docker build -t mynodeapp:v1 .
+            sudo docker run -d --name mynodeapp -p 3000:80 mynodeapp:v1
           EOF
